@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import imutils
 
 dtype1_lbl = ["V avg","I avg","P tot","E del"]
 
@@ -29,7 +29,6 @@ def findDevice(img,dtype):
     M = cv2.getPerspectiveTransform(np.float32(box),out)
     return cv2.warpPerspective(im_grey,M,(300,300))
 
-    
 def findScreen(device,dtype):
     if dtype == 0:
         threshold = 80
@@ -52,7 +51,6 @@ def findScreen(device,dtype):
         screen = cv2.rotate(screen, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE) 
     cv2.destroyAllWindows()
     return screen
-
 
 def extractTextImg(screen,dtype):
     if dtype == 0:
@@ -100,30 +98,59 @@ def extractTextImg(screen,dtype):
         print(count)
         print ("CAN'T FIND ENOUGH NUMBER")
 
+def extractDigit(numblock,dtype):
+    cv2.imshow("show",numblock)
+    hblock,wblock = numblock.shape
+    
+    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1,10)) 
+    dilation = cv2.dilate(numblock, rect_kernel, iterations = 2) 
+    cnts = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+    
+    digitimg = []
+    for c in cnts:
+        (x, y, w, h) = cv2.boundingRect(c)
+        if h > hblock*0.7:
+            digitimg.append(numblock[y:y + h, x:x + w])
 
-def readNumb(numbpic,dtype):
-    w,h = temptype1[2].shape
-    res = cv2.matchTemplate(numbpic,temptype1[2], cv2.TM_CCOEFF )
-    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
+    digitimg.reverse()
+    return digitimg
     
-    top_left = max_loc
-    bottom_right = (top_left[0] + w, top_left[1] + h)
-    cv2.rectangle(numbpic,top_left, bottom_right, 255, 2)
+
     
-    return numbpic
-  
-im = cv2.imread("metertest5.png")
+im = cv2.imread("testing images/metertest5.png")
 device = findDevice(im,0)
 screen = findScreen(device,0)
 cropped = extractTextImg(screen,0)
-num = readNumb(cropped[2],1)
-cv2.imshow("im",num)
+digits = extractDigit(cropped[1],0)
+
+for idx,digit in enumerate(digits):
+    cv2.imshow("Digit" + str(idx), digit)
+    cv2.waitKey(0)
 
 '''
 for idx,cropimg in enumerate(cropped): 
 
+    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1,10)) 
+    dilation = cv2.dilate(cropimg, rect_kernel, iterations = 2) 
+    cnts = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+    digitimg = []
+    himg,wimg = cropimg.shape
+    
+    for c in cnts:
+        
+        # compute the bounding box of the contour
+        (x, y, w, h) = cv2.boundingRect(c)
+        if w > 5 and h > himg*0.8:
+            cv2.rectangle(cropimg, (x,y) , (x+w,y+h) , 255 , 1 )
+            digitimg.append(cropimg[y:y + h, x:x + w])
+            
     cv2.imshow(dtype1_lbl[idx],cropimg)
     cv2.waitKey(0) 
+    for digit in digitimg:
+        cv2.imshow("Digit",digit)
+        cv2.waitKey(0)
 '''
-
+    
 cv2.waitKey(0) 
