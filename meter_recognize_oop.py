@@ -118,11 +118,11 @@ def extractDigit(numblock,dtype):
     
 
     
-im = cv2.imread("testing images/metertest5.png")
+im = cv2.imread("testing images/metertest2.png")
 device = findDevice(im,0)
 screen = findScreen(device,0)
-cropped = extractTextImg(screen,0)
-digits = extractDigit(cropped[1],0)
+textblock = extractTextImg(screen,0)
+digits = extractDigit(textblock[1],0)
 
 for idx,digit in enumerate(digits):
     cv2.imshow("Digit" + str(idx), digit)
