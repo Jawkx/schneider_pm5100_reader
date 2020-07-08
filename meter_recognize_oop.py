@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import imutils
+import matplotlib.pyplot as plt
 
 dtype1_lbl = ["V avg","I avg","P tot","E del"]
 
@@ -8,10 +9,9 @@ dtype1_lbl = ["V avg","I avg","P tot","E del"]
 #type1 
 temptype1 = []
 
-for x in range(0,9):
-    temp = cv2.imread("./templates/"+ str(x) +".PNG" , cv2.IMREAD_GRAYSCALE)
+for x in range(0,10):
+    temp = cv2.imread("templates/"+ str(x) +".png" ,0)
     temptype1.append(temp)
-
 
 def findDevice(img,dtype):
     if dtype == 0:
@@ -106,51 +106,45 @@ def extractDigit(numblock,dtype):
     dilation = cv2.dilate(numblock, rect_kernel, iterations = 2) 
     cnts = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
-    
+    extractedcount = 0
     digitimg = []
     for c in cnts:
+        extractedcount = extractedcount + 1
         (x, y, w, h) = cv2.boundingRect(c)
         if h > hblock*0.7:
-            digitimg.append(numblock[y:y + h, x:x + w])
+            digit = numblock[y:y + h, x:x + w]
+            digitimg.append(digit)
 
     digitimg.reverse()
     return digitimg
     
+def recognizeDigit(digit,dtype):
+
+    h,w = digit.shape
+    error = []
+    total = 0
+    
+    for idx,current in enumerate(temptype1): 
+        temps = cv2.resize(temptype1[idx], (w,h) , interpolation = cv2.INTER_AREA)
+        difference = cv2.countNonZero( digit - temps )
+        total = total + difference
+        error.append(difference)
+        
+    average = total / 10
+    val, idx = min((val, idx) for (idx, val) in enumerate(error))
+    confidence = round((average - val)/average , 3)*100
+    
+    return confidence , idx
 
     
-im = cv2.imread("testing images/metertest2.png")
+    
+im = cv2.imread("testing images/metertest7.png")
 device = findDevice(im,0)
 screen = findScreen(device,0)
 textblock = extractTextImg(screen,0)
 digits = extractDigit(textblock[1],0)
+confidence , digit = recognizeDigit(digits[2] , 1)
 
-for idx,digit in enumerate(digits):
-    cv2.imshow("Digit" + str(idx), digit)
-    cv2.waitKey(0)
 
-'''
-for idx,cropimg in enumerate(cropped): 
+print(digit)
 
-    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1,10)) 
-    dilation = cv2.dilate(cropimg, rect_kernel, iterations = 2) 
-    cnts = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = imutils.grab_contours(cnts)
-    digitimg = []
-    himg,wimg = cropimg.shape
-    
-    for c in cnts:
-        
-        # compute the bounding box of the contour
-        (x, y, w, h) = cv2.boundingRect(c)
-        if w > 5 and h > himg*0.8:
-            cv2.rectangle(cropimg, (x,y) , (x+w,y+h) , 255 , 1 )
-            digitimg.append(cropimg[y:y + h, x:x + w])
-            
-    cv2.imshow(dtype1_lbl[idx],cropimg)
-    cv2.waitKey(0) 
-    for digit in digitimg:
-        cv2.imshow("Digit",digit)
-        cv2.waitKey(0)
-'''
-    
-cv2.waitKey(0) 
