@@ -9,7 +9,7 @@ The goal is to achieve action as table below
 
 Input | Output
 --- | ---
-<img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/testing%20images/metertest2.png" width = "300"> | <img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/testing%20images/metertest2.png" width = "300">
+<img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/testing%20images/metertest2.png" width = "300"> | <img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/documentation%20pics/Excel%20output.png" width = "300">
 
 
 ## Library used, Language used, Practical implementation 
@@ -19,7 +19,11 @@ Image processing was done with the aid of [Open CV 2](https://opencv.org/) and [
 
 Data processing and integration with excel sheet was done with [Pandas](https://pandas.pydata.org/) Library
 
+## Installation
+### 1. Install Python 3
+Head to the python website and download [Python 3](https://www.python.org/).
 
+Remember tick []()
 
 ## Steps taken
 ### 1.Find device
