@@ -137,7 +137,6 @@ def recognizeDigit(digit,dtype):
     return confidence , idx
 
     
-    
 im = cv2.imread("testing images/metertest7.png")
 device = findDevice(im,0)
 screen = findScreen(device,0)
