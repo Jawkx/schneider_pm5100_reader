@@ -1,18 +1,23 @@
 # Meter Reader
 
 ## Introduction and purpose
-Started as an intern subproject for Lumileds Penang.
+This project is a solo project when im working as an intern at Lumileds Penang to aid with automation of data collecting for various equipment.
 
-The purpose of this program is to convert large image data to a text data efficiently. 
+The purpose of this program is to convert large amount of image data to a text data quickly and accurately. 
 
+The goal is to achieve action as table below
 
-The input can be seen below
-
-<img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/testing%20images/metertest2.png" width = "480">
+Input | Output
+--- | ---
+<img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/testing%20images/metertest2.png" width = "300"> | <img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/testing%20images/metertest2.png" width = "300">
 
 
 ## Library used, Language used, Practical implementation 
-The code will be written in python 3. With the aid of opencv2 and imultis library.
+The code will be written in [Python 3](https://www.python.org/). 
+
+Image processing was done with the aid of [Open CV 2](https://opencv.org/) and [imultis](https://github.com/jrosebr1/imutils) librarys
+
+Data processing and integration with excel sheet was done with [Pandas](https://pandas.pydata.org/) Library
 
 
 
@@ -43,6 +48,6 @@ def findDevice(img,dtype):
 
 The function above will return a greyscale image with flatten perspective as shown as below.
 
-Input:
-
-
+Input | Output
+--- | ---
+<img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/testing%20images/metertest2.png" width = "200"> | <img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/documentation%20pics/deviceimg.png" width = "200">
