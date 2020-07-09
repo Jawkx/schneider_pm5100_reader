@@ -86,6 +86,12 @@ def extractTextImg(screen,dtype):
             cv2.putText(screen,str(count),(x,y),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0) ,1,cv2.LINE_AA)
             rect = cv2.rectangle(screen, (x, y), (x + w, y + h), (0, 0, 255), 2)
             croppedtext = thresh[y:y + h, x:x + w] 
+            #Del dots
+            cnts = cv2.findContours(croppedtext, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            cnts = imutils.grab_contours(cnts)
+            dotcnt = min(cnts, key = cv2.contourArea)
+            x, y, w, h = cv2.boundingRect(dotcnt)
+            cv2.rectangle(croppedtext, (x, y), (x + w, y + h), 0, -1)
             croppedlist.append(croppedtext)
             
     croppedlist = croppedlist[0:maxcount] 
@@ -111,7 +117,7 @@ def extractDigit(numblock,dtype):
     for c in cnts:
         extractedcount = extractedcount + 1
         (x, y, w, h) = cv2.boundingRect(c)
-        if h > hblock*0.7:
+        if h > hblock*0.85:
             digit = numblock[y:y + h, x:x + w]
             digitimg.append(digit)
 
@@ -134,16 +140,41 @@ def recognizeDigit(digit,dtype):
     val, idx = min((val, idx) for (idx, val) in enumerate(error))
     confidence = round((average - val)/average , 3)*100
     
-    return confidence , idx
+    if confidence < 30:
+        cv2.imshow("x", digit)
+        k = cv2.waitKey(0)
+        idx = chr(k)
+        confidence = 100
+    else:
+        idx = str(idx)
+        
+    return idx , confidence
 
+
+def digits2string(digits,dchar,dman,dtype):
+    digitLst = []
+    confidenceLst = []
+    for digit in digits:
+        number ,confidence = recognizeDigit(digit,dtype)
+        digitLst =  digitLst + [number] 
+        confidenceLst = confidenceLst + [confidence]
     
-im = cv2.imread("testing images/metertest7.png")
+    charlst = ''.join(digitLst[:dchar])
+    manlst = ''.join(digitLst[dchar:])
+    
+    out = charlst + '.' + manlst
+    return out
+
+im = cv2.imread("testing images/metertest8.png")
 device = findDevice(im,0)
 screen = findScreen(device,0)
 textblock = extractTextImg(screen,0)
-digits = extractDigit(textblock[1],0)
-confidence , digit = recognizeDigit(digits[2] , 1)
+digits = extractDigit(textblock[0],0)
+#confidence , digit = recognizeDigit(digits[0] , 0)
+digitlist= digits2string(digits,3,0,0)
+print(digitlist)
 
 
-print(digit)
+cv2.imshow("output", textblock[0])
+cv2.waitKey(0)
 
