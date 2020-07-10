@@ -15,15 +15,41 @@ Input | Output
 ## Library used, Language used, Practical implementation 
 The code will be written in [Python 3](https://www.python.org/). 
 
-Image processing was done with the aid of [Open CV 2](https://opencv.org/) and [imultis](https://github.com/jrosebr1/imutils) librarys
+Image processing was done with the aid of [Open CV 2](https://opencv.org/) ,[imultis](https://github.com/jrosebr1/imutils) and [matplotlib](https://matplotlib.org/)librarys
 
-Data processing and integration with excel sheet was done with [Pandas](https://pandas.pydata.org/) Library
+Data processing and integration with excel sheet was done with [Pandas](https://pandas.pydata.org/) and [numpy](https://numpy.org/)Library
 
 ## Installation
 ### 1. Install Python 3
-Head to the python website and download [Python 3](https://www.python.org/).
+Head to the python website and download [Python 3](https://www.python.org/). It is recommend to download the version after 3.0.0
+Remember tick the add to path button as image below:
 
-Remember tick []()
+<img src = "https://datatofish.com/wp-content/uploads/2018/10/0001_add_Python_to_Path.png" width = 300>
+
+All the other setting can use default setting. To check if python was installed correctly type `python --version` into the cmd console. `python (version number)` will be returned.
+
+### 2.Install all required library
+Then check if [pip](https://pypi.org/project/pip/) was installed in the computer or not. It should be installed together with python. Pip was a package installer to let you install python addon/library easily in the command line. You can check if pip is installed by pressing `pip --version` into the command line. It will return pip version number and the location in the computer.
+
+To install all library for this to work on your computer.Type the below command into command line
+
+```
+pip install numpy
+pip install pandas
+pip install opencv-python
+pip install matplotlib
+pip install imultis
+```
+To test if everything is installed correctly. Type `python` into the command line. There should be visual such as `>>` in the command line. Then type code below and see if there is any error.
+
+``` python
+import numpy
+import pandas
+import cv2
+import matplotlib
+import imultis
+```
+If there is nothing happen the installation is completed.
 
 ## Steps taken
 ### 1.Find device
