@@ -24,11 +24,10 @@ type1 = {
 
     "digitmorphsize" : (1,10),
     "digit_dilation_no" : 2,
-    "Label" : ["V avg","I avg","P tot","E del"],
+    "label" : ["V avg","I avg","P tot","E del"],
     "decpoint" : [3,3,3,1],
     "dighighratio" : 0.85
 }
-
 
 
 def rotateimg(img):
@@ -38,7 +37,7 @@ def rotateimg(img):
 		k = cv2.waitKey(0)
 		cv2.destroyAllWindows()
 		if k == 114 or k ==82:
-			rotated = cv2.rotate(rotated, cv2.cv2.ROTATE_90_CLOCKWISE) 
+			rotated = cv2.rotate(rotated, cv2.cv2.ROTATE_90_CLOCKWISE)
 		elif k == 32:
 			break
 
@@ -54,7 +53,7 @@ def findDevice(img,dtype):
     devicecontours = max(allcontours, key = cv2.contourArea)
     rect = cv2.minAreaRect(devicecontours)
     box = cv2.boxPoints(rect).astype("int")
-    
+
     M = cv2.getPerspectiveTransform(np.float32(box),out)
     return cv2.warpPerspective(im_grey,M,dtype["outsize"])
 
@@ -62,7 +61,7 @@ def findScreen(device,dtype):
 
     threshold = dtype["screenThresh"]
     out = dtype["outpar"]
-        
+
     ret,thresh = cv2.threshold(device, threshold, 255, cv2.THRESH_BINARY)
     screencontours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     if screencontours!= None:
@@ -73,7 +72,7 @@ def findScreen(device,dtype):
         screen = cv2.warpPerspective(device,M,dtype["outsize"])
     else:
      print("ERROR CAN'T FIND SCREEN")
-     
+
     screen = rotateimg(screen)
 
     return screen
@@ -84,7 +83,7 @@ def extractTextImg(screen,dtype):
     morphsize = dtype["morphsize"]
     dilation_no = dtype["dilation_no"]
     maxcount = dtype["maxcount"]
-    
+
     croppedlist = []
     threshold = 255
     while True:
@@ -96,22 +95,22 @@ def extractTextImg(screen,dtype):
         threshold = threshold - 17
         if ratio < ratiobase:
             break;
-            
-    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morphsize) 
-    dilation = cv2.dilate(thresh, rect_kernel, iterations = dilation_no) 
+
+    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morphsize)
+    dilation = cv2.dilate(thresh, rect_kernel, iterations = dilation_no)
     textcontours, texthierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     count = 0
     for textc in textcontours:
-    
+
         x, y, w, h = cv2.boundingRect(textc)
         textsize = w*h
 
-        
+
         if textsize > 2000 and textsize < 8000:
             count = count+1
             cv2.putText(screen,str(count),(x,y),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0) ,1,cv2.LINE_AA)
             rect = cv2.rectangle(screen, (x, y), (x + w, y + h), (0, 0, 255), 2)
-            croppedtext = thresh[y:y + h, x:x + w] 
+            croppedtext = thresh[y:y + h, x:x + w]
             #Del dots
             cnts = cv2.findContours(croppedtext, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             cnts = imutils.grab_contours(cnts)
@@ -119,11 +118,11 @@ def extractTextImg(screen,dtype):
             x, y, w, h = cv2.boundingRect(dotcnt)
             cv2.rectangle(croppedtext, (x, y), (x + w, y + h), 0, -1)
             croppedlist.append(croppedtext)
-            
-    croppedlist = croppedlist[0:maxcount] 
+
+    croppedlist = croppedlist[0:maxcount]
     croppedlist.reverse()
 
-        
+
     if count >= maxcount:
         return croppedlist
     else:
@@ -133,9 +132,9 @@ def extractTextImg(screen,dtype):
 def extractDigit(numblock,dtype):
     cv2.imshow("show",numblock)
     hblock,wblock = numblock.shape
-    
-    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, dtype["digitmorphsize"]) 
-    dilation = cv2.dilate(numblock, rect_kernel, iterations = dtype["digit_dilation_no"]) 
+
+    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, dtype["digitmorphsize"])
+    dilation = cv2.dilate(numblock, rect_kernel, iterations = dtype["digit_dilation_no"])
     cnts = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     extractedcount = 0
@@ -149,24 +148,24 @@ def extractDigit(numblock,dtype):
 
     digitimg.reverse()
     return digitimg
-    
+
 def recognizeDigit(digit,dtype):
 	temptype = dtype["temps"]
 	h,w = digit.shape
 	error = []
 	total = 0
-    
-	for idx,current in enumerate(temptype): 
+
+	for idx,current in enumerate(temptype):
 		temps = cv2.resize(temptype[idx], (w,h) , interpolation = cv2.INTER_AREA)
 		difference = cv2.countNonZero( digit - temps )
 		total = total + difference
 		error.append(difference)
-        
+
 	average = total / 10
 	val, idx = min((val, idx) for (idx, val) in enumerate(error))
 	confidence = round((average - val)/average , 3)*100
-    
-	if confidence < 30:
+
+	if confidence < 35:
 		cv2.imshow("x", digit)
 		k = cv2.waitKey(0)
 		idx = chr(k)
@@ -181,25 +180,51 @@ def digits2string(digits,dchar,dtype):
     confidenceLst = []
     for digit in digits:
         number ,confidence = recognizeDigit(digit,dtype)
-        digitLst =  digitLst + [number] 
+        digitLst =  digitLst + [number]
         confidenceLst = confidenceLst + [confidence]
-    
+
     charlst = ''.join(digitLst[:dchar])
     manlst = ''.join(digitLst[dchar:])
-    
+
     out = charlst + '.' + manlst
-    return out
+    return float(out)
+
+class meter:
+    def __init__(self,image,dtype):
+        self.im = cv2.imread(image)
+        self.meterlabel = dtype["label"]
+        self.decpoint = dtype["decpoint"]
+        self.dtype = type1
+
+        self.device = findDevice(self.im,self.dtype)
+        self.screen = findScreen(self.device,self.dtype)
+        self.textblocks = extractTextImg(self.screen,self.dtype)
+
+        self.numbers = []
+        for idx,textblock, in enumerate(self.textblocks):
+            digits = extractDigit(textblock,self.dtype)
+            digitWithDecimal = digits2string(digits,self.dtype["decpoint"][idx],self.dtype)
+            self.numbers.append(digitWithDecimal)
+
+    def printdevice(self):
+        cv2.imshow("device",self.device)
+        cv2.waitKey(0)
 
 
+#dtype = type1
+'''
 im = cv2.imread("testing images/metertest9.png")
-device = findDevice(im,type1)
-screen = findScreen(device,type1)
-textblock = extractTextImg(screen,type1)
-digits = extractDigit(textblock[0],type1)
-digitlist= digits2string(digits,3,0,type1)
+device = findDevice(im)
+screen = findScreen(device)
+textblock = extractTextImg(screen)
+digits = extractDigit(textblock[3])
+digitlist= digits2string(digits,1)
 print(digitlist)
+'''
+meter1 = meter("testing images/metertest9.png",type1)
+meter2 = meter("testing images/metertest7.png",type1)
+print(meter1.numbers)
+print(meter2.numbers)
 
-
-cv2.imshow("output", textblock[0])
-cv2.waitKey(0)
-
+#cv2.imshow("output", textblock[0])
+#cv2.waitKey(0)
