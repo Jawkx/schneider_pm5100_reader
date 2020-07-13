@@ -17,7 +17,7 @@ type1 = {
 	"outsize" : (300,300),
 
 	"ratiobase" : 25,
-    "morphsize" : (5,1),
+    "morphsize" : (6,1),
     "dilation_no" : 3,
     "maxcount" : 4,
     "temps" : temptype1,
@@ -25,10 +25,10 @@ type1 = {
     "digitmorphsize" : (1,10),
     "digit_dilation_no" : 2,
     "label" : ["V avg","I avg","P tot","E del"],
+    "unit" :["V" , "A" , "kw" , "Gwh"],
     "decpoint" : [3,3,3,1],
     "dighighratio" : 0.85
 }
-
 
 def rotateimg(img):
 	rotated = img
@@ -206,25 +206,19 @@ class meter:
             digitWithDecimal = digits2string(digits,self.dtype["decpoint"][idx],self.dtype)
             self.numbers.append(digitWithDecimal)
 
-    def printdevice(self):
-        cv2.imshow("device",self.device)
+    def printLabel(self):
+        for idx in range(self.dtype["maxcount"]):
+            print(self.dtype["label"][idx] + " = ", self.numbers[idx] , self.dtype["unit"][idx])
+
+    def printscreen(self):
+        cv2.imshow("device",self.screen)
         cv2.waitKey(0)
 
 
-#dtype = type1
-'''
-im = cv2.imread("testing images/metertest9.png")
-device = findDevice(im)
-screen = findScreen(device)
-textblock = extractTextImg(screen)
-digits = extractDigit(textblock[3])
-digitlist= digits2string(digits,1)
-print(digitlist)
-'''
-meter1 = meter("testing images/metertest9.png",type1)
-meter2 = meter("testing images/metertest7.png",type1)
-print(meter1.numbers)
-print(meter2.numbers)
 
-#cv2.imshow("output", textblock[0])
-#cv2.waitKey(0)
+
+meter1 = meter("testing images/metertest5.png",type1)
+#meter2 = meter("testing images/metertest2.png",type1)
+print(meter1.numbers)
+meter1.printLabel()
+#print(meter2.numbers)
