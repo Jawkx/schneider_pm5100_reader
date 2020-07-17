@@ -217,7 +217,7 @@ class meter:
 
 
 
-meter1 = meter("testing images/metertest5.png",type1)
+meter1 = meter("testing images/metertest2.png",type1)
 #meter2 = meter("testing images/metertest2.png",type1)
 print(meter1.numbers)
 meter1.printLabel()
