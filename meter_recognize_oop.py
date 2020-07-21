@@ -211,6 +211,6 @@ class meter:
         cv2.waitKey(0)
 
 
-meter1 = meter("testing images/metertest5.png",type1)
+meter1 = meter("testing images/metertest9.png",type1)
 meter1.printLabel()
 
