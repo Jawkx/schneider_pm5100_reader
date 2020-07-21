@@ -1,5 +1,4 @@
 # Meter Reader
-
 ## Introduction and purpose
 This project is a solo project when im working as an intern at Lumileds Penang to aid with automation of data collecting for various equipment.
 
@@ -50,6 +49,23 @@ import matplotlib
 import imultis
 ```
 If there is nothing happen the installation is completed.
+
+## Using the application
+Inside the enviroment, create a new object with the class name meter, the parameters put in the source of the image that contain the meter and the type of the meter. Example as below:
+
+```python
+meter1 = meter("testing images/metertest7.png",type1)
+```
+
+When an object with `meter` class was created, a image of a screen will pop out. if the orientation was wrong press `R` or `r` to rotate. After desirable orientation was presented press `spacebar`
+
+This action will then pop out a digit as shown below. The digit will pop out when the program have low confidence of the recognition of the digit. Press the digit that was shown `(0-9 keys)`. Repeat the process if there is another digit.
+
+The class meter have method as below:
+Method | Funtion
+---|---
+`.printLabel()` | To print out the values readed
+`.debugPrompt()` | To print out the steps for debugging purpose
 
 ## Steps taken
 ### 1.Find device
