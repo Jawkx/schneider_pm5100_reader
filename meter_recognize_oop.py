@@ -206,11 +206,15 @@ class meter:
         for idx in range(self.dtype["maxcount"]):
             print(self.dtype["label"][idx] + " = ", self.numbers[idx] , self.dtype["unit"][idx])
 
-    def printscreen(self):
-        cv2.imshow("device",self.screen)
+    def debugPrompt(self):
+        cv2.imshow("device", self.device)
+        cv2.imshow("screen", self.screen)
+        for idx,textblock in enumerate(self.textblocks):
+            cv2.imshow("textblock" + str(idx) , textblock)
         cv2.waitKey(0)
 
 
-meter1 = meter("testing images/metertest9.png",type1)
+meter1 = meter("testing images/metertest7.png",type1)
 meter1.printLabel()
+meter1.debugPrompt()
 
