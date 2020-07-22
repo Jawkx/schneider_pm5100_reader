@@ -1,9 +1,6 @@
 import cv2
 import numpy as np
 import imutils
-import matplotlib.pyplot as plt
-
-dtype1_lbl = ["V avg", "I avg", "P tot", "E del"]
 
 temptype1 = []
 for i in range(0, 10):
@@ -20,13 +17,13 @@ type1 = {
     "dilation_no" : 3,
     "maxcount" : 4,
     "temps" : temptype1,
-    "digitmorphsize" : (1, 10),
+    "digitmorphsize" : (1, 9),
     "digit_dilation_no" : 2,
     "label" : ["V avg", "I avg", "P tot", "E del"],
     "unit" :["V", "A", "kw", "Gwh"],
-    "decpoint" : [3, 3, 3, 1],
     "dighighratio" : 0.85
 }
+
 
 def rotateimg(img):
     rotated = img
@@ -96,11 +93,12 @@ def extractTextImg(screen,dtype):
     rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, morphsize)
     dilation = cv2.dilate(thresh, rect_kernel, iterations = dilation_no)
     textcontours, texthierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
+    dotX = []
     count = 0
     for textc in textcontours:
         x, y, w, h = cv2.boundingRect(textc)
         textsize = w*h
+        
 
         if textsize > 2000 and textsize < 8000:
             count = count + 1
@@ -114,18 +112,26 @@ def extractTextImg(screen,dtype):
             x, y, w, h = cv2.boundingRect(dotcnt)
             cv2.rectangle(croppedtext, (x, y), (x + w, y + h), 0, -1)
             croppedlist.append(croppedtext)
+            dotX.append(x)
 
     croppedlist = croppedlist[0:maxcount]
     croppedlist.reverse()
+    dotX.reverse()
 
     if count >= maxcount:
-        return croppedlist
+        return croppedlist , dotX
     else:
         print(count)
         print ("CAN'T FIND ENOUGH NUMBER")
         return 0
 
-def extractDigit(numblock,dtype):
+def findDot(digitsCoor,dotCoor):
+    for idx,digitCoor in enumerate(digitsCoor):
+        if dotCoor <= digitCoor:
+            return idx 
+    return idx
+
+def extractDigit(numblock,dotPos,dtype):
     cv2.imshow("show",numblock)
     hblock,wblock = numblock.shape
 
@@ -135,15 +141,19 @@ def extractDigit(numblock,dtype):
     cnts = imutils.grab_contours(cnts)
     extractedcount = 0
     digitimg = []
+    digitimgCoor = []
     for c in cnts:
         extractedcount = extractedcount + 1
         (x, y, w, h) = cv2.boundingRect(c)
         if h > hblock*dtype["dighighratio"]:
             digit = numblock[y:y + h, x:x + w]
             digitimg.append(digit)
-
+            digitimgCoor.append(x)
+    
     digitimg.reverse()
-    return digitimg
+    digitimgCoor.reverse()
+    dotPos = findDot(digitimgCoor,dotPos)
+    return digitimg , dotPos
 
 def recognizeDigit(digit,dtype):
     temptype = dtype["temps"]
@@ -189,17 +199,16 @@ class meter:
     def __init__(self,image,dtype):
         self.im = cv2.imread(image)
         self.meterlabel = dtype["label"]
-        self.decpoint = dtype["decpoint"]
         self.dtype = type1
 
         self.device = findDevice(self.im,self.dtype)
         self.screen = findScreen(self.device,self.dtype)
-        self.textblocks = extractTextImg(self.screen,self.dtype)
+        self.textblocks, self.dotCoor = extractTextImg(self.screen,self.dtype)
 
         self.numbers = []
         for idx,textblock in enumerate(self.textblocks):
-            digits = extractDigit(textblock,self.dtype)
-            digitWithDecimal = digits2string(digits,self.dtype["decpoint"][idx],self.dtype)
+            digits,dotPos = extractDigit(textblock,self.dotCoor[idx],self.dtype)
+            digitWithDecimal = digits2string(digits,dotPos,self.dtype)
             self.numbers.append(digitWithDecimal)
 
     def printLabel(self):
@@ -212,5 +221,4 @@ class meter:
         for idx,textblock in enumerate(self.textblocks):
             cv2.imshow("textblock" + str(idx) , textblock)
         cv2.waitKey(0)
-
 
