@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import imutils
+from copy import copy
 
 temptype1 = []
 for i in range(0, 10):
@@ -17,18 +18,23 @@ type1 = {
     "dilation_no" : 3,
     "maxcount" : 4,
     "temps" : temptype1,
-    "digitmorphsize" : (1, 9),
+    "digitmorphsize" : (1, 8),
     "digit_dilation_no" : 2,
     "label" : ["V avg", "I avg", "P tot", "E del"],
-    "unit" :["V", "A", "kw", "Gwh"],
+    "unit" :[" V", " A", " kw", " Gwh"],
     "dighighratio" : 0.85
 }
 
 
 def rotateimg(img):
     rotated = img
+    x,y = img.shape
+    center = ( 0 , int(y/2) )
     while True:
-        cv2.imshow("Rotate?", rotated)
+        rotatedShow = copy(rotated)
+        cv2.putText(rotatedShow,"Press R to rotate",center,cv2.FONT_HERSHEY_SIMPLEX ,1,0,2)
+        cv2.putText(rotatedShow,"Space to continue",(0, int(y/2) + 30),cv2.FONT_HERSHEY_SIMPLEX ,1,0,2)
+        cv2.imshow("Rotate?", rotatedShow)
         k = cv2.waitKey(0)
         cv2.destroyAllWindows()
         if k in (114, 82):
@@ -102,8 +108,7 @@ def extractTextImg(screen,dtype):
 
         if textsize > 2000 and textsize < 8000:
             count = count + 1
-            cv2.putText(screen,str(count),(x,y),cv2.FONT_HERSHEY_SIMPLEX,1,(255, 0, 0) ,1,cv2.LINE_AA)
-            rect = cv2.rectangle(screen, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            rect = cv2.rectangle(screen, (x, y), (x + w, y + h), (0, 0, 255), 5)
             croppedtext = thresh[y:y + h, x:x + w]
             #Del dots
             cnts = cv2.findContours(croppedtext, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -132,7 +137,6 @@ def findDot(digitsCoor,dotCoor):
     return idx
 
 def extractDigit(numblock,dotPos,dtype):
-    cv2.imshow("show",numblock)
     hblock,wblock = numblock.shape
 
     rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, dtype["digitmorphsize"])
@@ -197,6 +201,7 @@ def digits2string(digits,dchar,dtype):
 
 class meter:
     def __init__(self,image,dtype):
+        self.blank = 255 * np.ones(shape=[300, 300, 1], dtype=np.uint8)
         self.im = cv2.imread(image)
         self.meterlabel = dtype["label"]
         self.dtype = type1
@@ -206,14 +211,21 @@ class meter:
         self.textblocks, self.dotCoor = extractTextImg(self.screen,self.dtype)
 
         self.numbers = []
+
         for idx,textblock in enumerate(self.textblocks):
             digits,dotPos = extractDigit(textblock,self.dotCoor[idx],self.dtype)
             digitWithDecimal = digits2string(digits,dotPos,self.dtype)
             self.numbers.append(digitWithDecimal)
+            cv2.putText(self.blank, self.dtype["label"][idx] + " = " + str(digitWithDecimal) + self.dtype["unit"][idx], (0, int(idx * 300/self.dtype["maxcount"])+30),cv2.FONT_HERSHEY_SIMPLEX ,0.7,0,1)
 
     def printLabel(self):
         for idx in range(self.dtype["maxcount"]):
             print(self.dtype["label"][idx] + " = ", self.numbers[idx] , self.dtype["unit"][idx])
+            
+    def check(self):
+        cv2.imshow("screen",self.screen)
+        cv2.imshow("value",self.blank)
+        cv2.waitKey(0)
 
     def debugPrompt(self):
         cv2.imshow("device", self.device)

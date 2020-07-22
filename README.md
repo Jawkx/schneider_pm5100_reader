@@ -16,7 +16,7 @@ The code will be written in [Python 3](https://www.python.org/).
 
 Image processing was done with the aid of [Open CV 2](https://opencv.org/) ,[imultis](https://github.com/jrosebr1/imutils) and [matplotlib](https://matplotlib.org/)librarys
 
-Data processing and integration with excel sheet was done with [Pandas](https://pandas.pydata.org/) and [numpy](https://numpy.org/)Library
+Data processing and integration with excel sheet was done with [Pandas](https://pandas.pydata.org/) and [numpy](https://numpy.org/) Library  
 
 ## Installation
 ### 1. Install Python 3
