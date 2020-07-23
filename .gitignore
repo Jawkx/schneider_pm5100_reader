@@ -1,2 +1,5 @@
 dir_to_ignore/
 resizer.py
+datasets/
+_py_cache_/
+.vscode/

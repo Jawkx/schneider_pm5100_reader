@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import imutils
 from copy import copy
+from functions import *
 
 temptype1 = []
 for i in range(0, 10):
@@ -216,7 +217,7 @@ class meter:
             digits,dotPos = extractDigit(textblock,self.dotCoor[idx],self.dtype)
             digitWithDecimal = digits2string(digits,dotPos,self.dtype)
             self.numbers.append(digitWithDecimal)
-            cv2.putText(self.blank, self.dtype["label"][idx] + " = " + str(digitWithDecimal) + self.dtype["unit"][idx], (0, int(idx * 300/self.dtype["maxcount"])+30),cv2.FONT_HERSHEY_SIMPLEX ,0.7,0,1)
+            cv2.putText(self.blank, self.dtype["label"][idx] + " = " + str(digitWithDecimal) + self.dtype["unit"][idx], (0, int(idx * 300/self.dtype["maxcount"])+30),cv2.FONT_HERSHEY_SIMPLEX ,0.7,0,2)
 
     def printLabel(self):
         for idx in range(self.dtype["maxcount"]):
