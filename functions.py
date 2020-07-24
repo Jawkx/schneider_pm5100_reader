@@ -9,12 +9,12 @@ for i in range(0, 10):
     temp = cv2.imread("templates/"+ str(i) +".png", 0)
     temptype1.append(temp)
 
-type1 = {
+param = {
     "deviceThresh" : 40,
     "screenThresh" : 80,
     "outpar" : np.float32([[0, 300], [0, 0], [300, 0], [300, 300]]),
     "outsize" : (300, 300),
-    "ratiobase" : 25,
+    "ratiobase" : 28,
     "morphsize" : (6, 1),
     "dilation_no" : 3,
     "maxcount" : 4,
@@ -26,7 +26,14 @@ type1 = {
     "dighighratio" : 0.85
 }
 
+def debugWindow(target):
+    cv2.imshow("debugwindow",target)
+    k = cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    if k==113:
+        exit()
 
+#######
 def rotateimg(img):
     rotated = img
     x,y = img.shape
@@ -45,9 +52,9 @@ def rotateimg(img):
 
     return rotated
 
-def findDevice(img,dtype):
-    threshold = dtype["deviceThresh"]
-    out = dtype["outpar"]
+def findDevice(img):
+    threshold = param["deviceThresh"]
+    out = param["outpar"]
     im_grey = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     ret,thresh = cv2.threshold(im_grey, threshold, 255, cv2.THRESH_BINARY_INV)
 
@@ -57,11 +64,11 @@ def findDevice(img,dtype):
     box = cv2.boxPoints(rect).astype("int")
 
     M = cv2.getPerspectiveTransform(np.float32(box),out)
-    return cv2.warpPerspective(im_grey,M,dtype["outsize"])
+    return cv2.warpPerspective(im_grey,M,param["outsize"])
 
-def findScreen(device,dtype):
-    threshold = dtype["screenThresh"]
-    out = dtype["outpar"]
+def findScreen(device):
+    threshold = param["screenThresh"]
+    out = param["outpar"]
 
     ret,thresh = cv2.threshold(device, threshold, 255, cv2.THRESH_BINARY)
     screencontours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -70,7 +77,7 @@ def findScreen(device,dtype):
         rect = cv2.minAreaRect(screen)
         box2 = cv2.boxPoints(rect).astype("int")
         M = cv2.getPerspectiveTransform(np.float32(box2),out)
-        screen = cv2.warpPerspective(device,M,dtype["outsize"])
+        screen = cv2.warpPerspective(device,M,param["outsize"])
     else:
         print("ERROR CAN'T FIND SCREEN")
 
@@ -78,15 +85,23 @@ def findScreen(device,dtype):
 
     return screen
 
-def extractTextImg(screen,dtype):
-    ratiobase = dtype["ratiobase"]
-    morphsize = dtype["morphsize"]
-    dilation_no = dtype["dilation_no"]
-    maxcount = dtype["maxcount"]
+def findDot(img):
+    kernel = np.ones((1,1),np.uint8)
+    opening = cv2.erode(img, kernel, iterations=10)
+    cnts,hierarchy = cv2.findContours(opening, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    dotCnt = min(cnts,key= cv2.contourArea)
+    (x,y),radius = cv2.minEnclosingCircle(dotCnt)
+    return x,y , int(radius)
+    
+def extractTextImg(screen):
+    scrw,scrh = screen.shape
+    ratiobase = param["ratiobase"]
+    morphsize = param["morphsize"]
+    dilation_no = param["dilation_no"]
+    maxcount = param["maxcount"]
 
     croppedlist = []
     threshold = 255
-
     while True:
         ret,thresh = cv2.threshold(screen, threshold, 255, cv2.THRESH_BINARY_INV)
         x,y = thresh.shape
@@ -101,47 +116,37 @@ def extractTextImg(screen,dtype):
     dilation = cv2.dilate(thresh, rect_kernel, iterations = dilation_no)
     textcontours, texthierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     dotX = []
-    count = 0
     for textc in textcontours:
         x, y, w, h = cv2.boundingRect(textc)
         textsize = w*h
-        
 
-        if textsize > 2000 and textsize < 8000:
-            count = count + 1
-            rect = cv2.rectangle(screen, (x, y), (x + w, y + h), (0, 0, 255), 5)
+        if textsize > 2000  and w < 200:
+            rect = cv2.rectangle(screen, (x, y), (x + w, y + h), (0, 0, 255), 1)
             croppedtext = thresh[y:y + h, x:x + w]
-            #Del dots
-            cnts = cv2.findContours(croppedtext, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-            cnts = imutils.grab_contours(cnts)
-            dotcnt = min(cnts, key = cv2.contourArea)
-            x, y, w, h = cv2.boundingRect(dotcnt)
-            cv2.rectangle(croppedtext, (x, y), (x + w, y + h), 0, -1)
+            x,y,radius = findDot(croppedtext)
+            
+            cv2.circle(croppedtext,( int(x),int(y) ),radius,0,-1)
             croppedlist.append(croppedtext)
             dotX.append(x)
 
+    dotX = dotX[0:maxcount]
     croppedlist = croppedlist[0:maxcount]
     croppedlist.reverse()
     dotX.reverse()
 
-    if count >= maxcount:
-        return croppedlist , dotX
-    else:
-        print(count)
-        print ("CAN'T FIND ENOUGH NUMBER")
-        return 0
+    return croppedlist , dotX
 
-def findDot(digitsCoor,dotCoor):
+def findDotDecimalPos(digitsCoor,dotCoor):
+    digitsCoor.append(10000)
     for idx,digitCoor in enumerate(digitsCoor):
         if dotCoor <= digitCoor:
             return idx 
-    return idx
-
-def extractDigit(numblock,dotPos,dtype):
+    
+def extractDigit(numblock,dotPos):
     hblock,wblock = numblock.shape
 
-    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, dtype["digitmorphsize"])
-    dilation = cv2.dilate(numblock, rect_kernel, iterations = dtype["digit_dilation_no"])
+    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, param["digitmorphsize"])
+    dilation = cv2.dilate(numblock, rect_kernel, iterations = param["digit_dilation_no"])
     cnts = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     extractedcount = 0
@@ -150,18 +155,19 @@ def extractDigit(numblock,dotPos,dtype):
     for c in cnts:
         extractedcount = extractedcount + 1
         (x, y, w, h) = cv2.boundingRect(c)
-        if h > hblock*dtype["dighighratio"]:
+        if h > hblock*param["dighighratio"]:
             digit = numblock[y:y + h, x:x + w]
             digitimg.append(digit)
             digitimgCoor.append(x)
     
     digitimg.reverse()
     digitimgCoor.reverse()
-    dotPos = findDot(digitimgCoor,dotPos)
+    dotPos = findDotDecimalPos(digitimgCoor,dotPos)
     return digitimg , dotPos
 
-def recognizeDigit(digit,dtype):
-    temptype = dtype["temps"]
+def recognizeDigit(digit):
+    debugWindow(digit)
+    temptype = param["temps"]
     h,w = digit.shape
     error = []
     total = 0
@@ -186,11 +192,11 @@ def recognizeDigit(digit,dtype):
 
     return idx , confidence
 
-def digits2string(digits,dchar,dtype):
+def digits2string(digits,dchar):
     digitLst = []
     confidenceLst = []
     for digit in digits:
-        number ,confidence = recognizeDigit(digit,dtype)
+        number ,confidence = recognizeDigit(digit)
         digitLst =  digitLst + [number]
         confidenceLst = confidenceLst + [confidence]
 
@@ -201,27 +207,26 @@ def digits2string(digits,dchar,dtype):
     return float(out)
 
 class meter:
-    def __init__(self,image,dtype):
-        self.blank = 255 * np.ones(shape=[300, 300, 1], dtype=np.uint8)
+    def __init__(self,image):
+        self.blank = 255 * np.ones(shape=[300, 300, 1])
         self.im = cv2.imread(image)
-        self.meterlabel = dtype["label"]
-        self.dtype = type1
+        self.meterlabel = param["label"]
 
-        self.device = findDevice(self.im,self.dtype)
-        self.screen = findScreen(self.device,self.dtype)
-        self.textblocks, self.dotCoor = extractTextImg(self.screen,self.dtype)
+        self.device = findDevice(self.im)
+        self.screen = findScreen(self.device)
+        self.textblocks, self.dotCoor = extractTextImg(self.screen)
 
         self.numbers = []
 
         for idx,textblock in enumerate(self.textblocks):
-            digits,dotPos = extractDigit(textblock,self.dotCoor[idx],self.dtype)
-            digitWithDecimal = digits2string(digits,dotPos,self.dtype)
+            digits,dotPos = extractDigit(textblock,self.dotCoor[idx])
+            digitWithDecimal = digits2string(digits,dotPos)
             self.numbers.append(digitWithDecimal)
-            cv2.putText(self.blank, self.dtype["label"][idx] + " = " + str(digitWithDecimal) + self.dtype["unit"][idx], (0, int(idx * 300/self.dtype["maxcount"])+30),cv2.FONT_HERSHEY_SIMPLEX ,0.7,0,2)
+            cv2.putText(self.blank, param["label"][idx] + " = " + str(digitWithDecimal) + param["unit"][idx], (0, int(idx * 300/param["maxcount"])+30),cv2.FONT_HERSHEY_SIMPLEX ,0.7,0,2)
 
     def printLabel(self):
-        for idx in range(self.dtype["maxcount"]):
-            print(self.dtype["label"][idx] + " = ", self.numbers[idx] , self.dtype["unit"][idx])
+        for idx in range(self.param["maxcount"]):
+            print(self.param["label"][idx] + " = ", self.numbers[idx] , self.param["unit"][idx])
             
     def check(self):
         cv2.imshow("screen",self.screen)

@@ -20,5 +20,5 @@ for img in imgarr:
             cv2.destroyAllWindows()
             if k != 32:
                 print( chr(k) )
-                cv2.imwrite( "./training_data/" + str(count) + "_" + chr(k) +".png" , digit)
+                cv2.imwrite( "./datasets/" + str(count) + "_" + chr(k) +".png" , digit)
                 count += 1
