@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
 import imutils
+from matplotlib import pyplot as plt
 from copy import copy
-from functions import *
+
 
 temptype1 = []
 for i in range(0, 10):
@@ -91,7 +92,16 @@ def findDot(img):
     cnts,hierarchy = cv2.findContours(opening, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     dotCnt = min(cnts,key= cv2.contourArea)
     (x,y),radius = cv2.minEnclosingCircle(dotCnt)
-    return x,y , int(radius)
+    if radius > 3 or radius < 1:
+        print("ERROR:CAN'T FIND DOT,INPUT DECIMAL POINT MANAULLY")
+        cv2.imshow("Point decimal point" , img)
+        k = cv2.waitKey(0)
+        x = int(chr(k))
+        noDot = True
+        return x,y , int(radius) , noDot
+    else: 
+        noDot = False
+        return x,y , int(radius) ,noDot
     
 def extractTextImg(screen):
     scrw,scrh = screen.shape
@@ -116,6 +126,7 @@ def extractTextImg(screen):
     dilation = cv2.dilate(thresh, rect_kernel, iterations = dilation_no)
     textcontours, texthierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     dotX = []
+    noDotarr = []
     for textc in textcontours:
         x, y, w, h = cv2.boundingRect(textc)
         textsize = w*h
@@ -123,26 +134,35 @@ def extractTextImg(screen):
         if textsize > 2000  and w < 200:
             rect = cv2.rectangle(screen, (x, y), (x + w, y + h), (0, 0, 255), 1)
             croppedtext = thresh[y:y + h, x:x + w]
-            x,y,radius = findDot(croppedtext)
-            
-            cv2.circle(croppedtext,( int(x),int(y) ),radius,0,-1)
+            x,y,radius,noDot = findDot(croppedtext)
+            if not noDot:
+                cv2.circle(croppedtext,( int(x),int(y) ),radius,0,-1)
             croppedlist.append(croppedtext)
             dotX.append(x)
+            if noDot:
+                noDotarr.append(True)
+            else:
+                noDotarr.append(0)
 
+    noDotarr = noDotarr[0:maxcount]
     dotX = dotX[0:maxcount]
     croppedlist = croppedlist[0:maxcount]
     croppedlist.reverse()
     dotX.reverse()
+    noDotarr.reverse()
 
-    return croppedlist , dotX
+    return croppedlist , dotX , noDotarr
 
-def findDotDecimalPos(digitsCoor,dotCoor):
+def findDotDecimalPos(digitsCoor,dotCoor,noDot):
+    if noDot:
+        return dotCoor
+
     digitsCoor.append(10000)
     for idx,digitCoor in enumerate(digitsCoor):
         if dotCoor <= digitCoor:
             return idx 
     
-def extractDigit(numblock,dotPos):
+def extractDigit(numblock,dotPos,noDot):
     hblock,wblock = numblock.shape
 
     rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, param["digitmorphsize"])
@@ -162,11 +182,10 @@ def extractDigit(numblock,dotPos):
     
     digitimg.reverse()
     digitimgCoor.reverse()
-    dotPos = findDotDecimalPos(digitimgCoor,dotPos)
+    dotPos = findDotDecimalPos(digitimgCoor,dotPos,noDot)
     return digitimg , dotPos
 
 def recognizeDigit(digit):
-    debugWindow(digit)
     temptype = param["temps"]
     h,w = digit.shape
     error = []
@@ -182,10 +201,12 @@ def recognizeDigit(digit):
     val, idx = min((val, idx) for (idx, val) in enumerate(error))
     confidence = round((average - val)/average , 3)*100
 
-    if confidence < 35:
+    if confidence < 25:
+        print("\nLOW confidence, input digit manually")
         cv2.imshow("x", digit)
         k = cv2.waitKey(0)
         idx = chr(k)
+        print ("Inputted digit: " + idx)
         confidence = 100
     else:
         idx = str(idx)
@@ -214,12 +235,12 @@ class meter:
 
         self.device = findDevice(self.im)
         self.screen = findScreen(self.device)
-        self.textblocks, self.dotCoor = extractTextImg(self.screen)
+        self.textblocks, self.dotCoor , self.noDotArr= extractTextImg(self.screen)
 
         self.numbers = []
 
         for idx,textblock in enumerate(self.textblocks):
-            digits,dotPos = extractDigit(textblock,self.dotCoor[idx])
+            digits,dotPos = extractDigit(textblock,self.dotCoor[idx],self.noDotArr[idx])
             digitWithDecimal = digits2string(digits,dotPos)
             self.numbers.append(digitWithDecimal)
             cv2.putText(self.blank, param["label"][idx] + " = " + str(digitWithDecimal) + param["unit"][idx], (0, int(idx * 300/param["maxcount"])+30),cv2.FONT_HERSHEY_SIMPLEX ,0.7,0,2)

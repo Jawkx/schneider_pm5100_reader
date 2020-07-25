@@ -2,4 +2,4 @@ dir_to_ignore/
 resizer.py
 __pycache__/
 .vscode/
-training_data/
+datasets/
