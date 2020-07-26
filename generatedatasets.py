@@ -2,7 +2,7 @@ from functions import *
 import os
 #done till 19
 imgarr = []
-count = 339 
+count = 519 
 for idx in range(20,30):
     print("picture" + str(idx))
     img = cv2.imread("testing_images/metertest" + str(idx) + ".png")
@@ -12,9 +12,9 @@ for img in imgarr:
     device = findDevice(img)
     screen = findScreen(device)
     
-    textblocks, dotCoor = extractTextImg(screen)
+    textblocks, dotCoor , nodot= extractTextImg(screen)
     for textblock in textblocks:
-        digits , null = extractDigit(textblock,70)
+        digits , null = extractDigit(textblock,70,False)
         for digit in digits:
             cv2.imshow("digit",digit)
             k = cv2.waitKey(0)

@@ -20,7 +20,7 @@ param = {
     "dilation_no" : 3,
     "maxcount" : 4,
     "temps" : temptype1,
-    "digitmorphsize" : (1, 8),
+    "digitmorphsize" : (1, 5),
     "digit_dilation_no" : 2,
     "label" : ["V avg", "I avg", "P tot", "E del"],
     "unit" :[" V", " A", " kw", " Gwh"],
@@ -86,23 +86,44 @@ def findScreen(device):
 
     return screen
 
-def findDot(img):
+
+def coverDot(img,x,noDot):
+    w,h = img.shape
+    if noDot:
+        x = 0
+        while True:
+            copiedimg = copy(img)
+            drawedimg = cv2.rectangle(copiedimg, (x,0) , (x+5,h) ,0,-1)
+            cv2.imshow("finddot",drawedimg)
+            k = cv2.waitKey(0)
+            cv2.destroyAllWindows()
+            if k == 32 :
+                break
+            elif k == 100:
+                x = x + 5
+            elif k == 97:
+                if x == 0:
+                    x = 0
+                else:
+                    x = x - 5
+        
+    else:
+        w,h = img.shape
+        drawedimg = cv2.rectangle(img, (x,0) , (x+5,h) ,0,-1)
+
+    return drawedimg , x
+
+def findCoverDot(img):
     kernel = np.ones((1,1),np.uint8)
     opening = cv2.erode(img, kernel, iterations=10)
     cnts,hierarchy = cv2.findContours(opening, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     dotCnt = min(cnts,key= cv2.contourArea)
     (x,y),radius = cv2.minEnclosingCircle(dotCnt)
     if radius > 3 or radius < 1:
-        print("ERROR:CAN'T FIND DOT,INPUT DECIMAL POINT MANAULLY")
-        cv2.imshow("Point decimal point" , img)
-        k = cv2.waitKey(0)
-        x = int(chr(k))
-        noDot = True
-        return x,y , int(radius) , noDot
+        return coverDot(img,0,True) 
     else: 
-        noDot = False
-        return x,y , int(radius) ,noDot
-    
+        return coverDot(img,int(x),False)
+
 def extractTextImg(screen):
     scrw,scrh = screen.shape
     ratiobase = param["ratiobase"]
@@ -126,7 +147,6 @@ def extractTextImg(screen):
     dilation = cv2.dilate(thresh, rect_kernel, iterations = dilation_no)
     textcontours, texthierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     dotX = []
-    noDotarr = []
     for textc in textcontours:
         x, y, w, h = cv2.boundingRect(textc)
         textsize = w*h
@@ -134,40 +154,27 @@ def extractTextImg(screen):
         if textsize > 2000  and w < 200:
             rect = cv2.rectangle(screen, (x, y), (x + w, y + h), (0, 0, 255), 1)
             croppedtext = thresh[y:y + h, x:x + w]
-            x,y,radius,noDot = findDot(croppedtext)
-            if not noDot:
-                cv2.circle(croppedtext,( int(x),int(y) ),radius,0,-1)
+            croppedtext,x = findCoverDot(croppedtext)
             croppedlist.append(croppedtext)
             dotX.append(x)
-            if noDot:
-                noDotarr.append(True)
-            else:
-                noDotarr.append(0)
 
-    noDotarr = noDotarr[0:maxcount]
     dotX = dotX[0:maxcount]
     croppedlist = croppedlist[0:maxcount]
     croppedlist.reverse()
     dotX.reverse()
-    noDotarr.reverse()
 
-    return croppedlist , dotX , noDotarr
+    return croppedlist , dotX
 
-def findDotDecimalPos(digitsCoor,dotCoor,noDot):
-    if noDot:
-        return dotCoor
+def findDotDecimalPos(digitsCoor,dotCoor):
 
     digitsCoor.append(10000)
     for idx,digitCoor in enumerate(digitsCoor):
         if dotCoor <= digitCoor:
             return idx 
     
-def extractDigit(numblock,dotPos,noDot):
+def extractDigit(numblock,dotPos):
     hblock,wblock = numblock.shape
-
-    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, param["digitmorphsize"])
-    dilation = cv2.dilate(numblock, rect_kernel, iterations = param["digit_dilation_no"])
-    cnts = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cv2.findContours(numblock, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     cnts = imutils.grab_contours(cnts)
     extractedcount = 0
     digitimg = []
@@ -182,7 +189,7 @@ def extractDigit(numblock,dotPos,noDot):
     
     digitimg.reverse()
     digitimgCoor.reverse()
-    dotPos = findDotDecimalPos(digitimgCoor,dotPos,noDot)
+    dotPos = findDotDecimalPos(digitimgCoor,dotPos)
     return digitimg , dotPos
 
 def recognizeDigit(digit):
@@ -235,12 +242,12 @@ class meter:
 
         self.device = findDevice(self.im)
         self.screen = findScreen(self.device)
-        self.textblocks, self.dotCoor , self.noDotArr= extractTextImg(self.screen)
+        self.textblocks, self.dotCoor= extractTextImg(self.screen)
 
         self.numbers = []
 
         for idx,textblock in enumerate(self.textblocks):
-            digits,dotPos = extractDigit(textblock,self.dotCoor[idx],self.noDotArr[idx])
+            digits,dotPos = extractDigit(textblock,self.dotCoor[idx])
             digitWithDecimal = digits2string(digits,dotPos)
             self.numbers.append(digitWithDecimal)
             cv2.putText(self.blank, param["label"][idx] + " = " + str(digitWithDecimal) + param["unit"][idx], (0, int(idx * 300/param["maxcount"])+30),cv2.FONT_HERSHEY_SIMPLEX ,0.7,0,2)
