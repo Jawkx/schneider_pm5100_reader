@@ -85,7 +85,6 @@ def findScreen(device):
 
     return screen
 
-
 def coverDot(img,x,noDot):
     w,h = img.shape
     if noDot:
@@ -118,7 +117,7 @@ def findCoverDot(img):
     cnts,hierarchy = cv2.findContours(opening, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     dotCnt = min(cnts,key= cv2.contourArea)
     (x,y),radius = cv2.minEnclosingCircle(dotCnt)
-    if radius > 3 or radius < 1:
+    if radius > 5 or radius < 1:
         return coverDot(img,0,True) 
     else: 
         return coverDot(img,int(x),False)
@@ -212,7 +211,7 @@ def recognizeDigit(digit):
     val, idx = min((val, idx) for (idx, val) in enumerate(error))
     confidence = round((average - val)/average , 3)*100
 
-    if confidence < 25:
+    if confidence < 30:
         print("\nLOW confidence, input digit manually")
         cv2.imshow("x", digit)
         k = cv2.waitKey(0)
