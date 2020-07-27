@@ -26,8 +26,11 @@ param = {
     "dighighratio" : 0.85
 }
 
-def debugWindow(target):
-    cv2.imshow("debugwindow",target)
+def debugWindow(targets):
+    count = 0
+    for target in targets:
+        cv2.imshow("debugwindow" + str(count) ,target)
+        count = count + 1
     k = cv2.waitKey(0)
     cv2.destroyAllWindows()
     if k==113:
@@ -200,7 +203,10 @@ def recognizeDigit(digit):
     h,w = digit.shape
     error = []
     total = 0
-
+    differenceImgsa = []
+    differenceImgsb = []
+    differencesa = []
+    differencesb = []
     for idx,current in enumerate(temptype):
         temps = cv2.resize(temptype[idx], (w,h) , interpolation = cv2.INTER_AREA)
         difference = cv2.countNonZero( digit - temps )
