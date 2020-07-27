@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import imutils
-from matplotlib import pyplot as plt
 from copy import copy
 
 
@@ -147,6 +146,7 @@ def extractTextImg(screen):
     dilation = cv2.dilate(thresh, rect_kernel, iterations = dilation_no)
     textcontours, texthierarchy = cv2.findContours(dilation, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     dotX = []
+    posY = []
     for textc in textcontours:
         x, y, w, h = cv2.boundingRect(textc)
         textsize = w*h
@@ -154,14 +154,17 @@ def extractTextImg(screen):
         if textsize > 2000  and w < 200:
             rect = cv2.rectangle(screen, (x, y), (x + w, y + h), (0, 0, 255), 1)
             croppedtext = thresh[y:y + h, x:x + w]
-            croppedtext,x = findCoverDot(croppedtext)
-            croppedlist.append(croppedtext)
-            dotX.append(x)
+            croppedlist.append(croppedtext)   
+            posY.append(y)
 
-    dotX = dotX[0:maxcount]
-    croppedlist = croppedlist[0:maxcount]
-    croppedlist.reverse()
-    dotX.reverse()
+    posY, croppedlist = zip(*sorted(zip(posY, croppedlist)))
+    posY = list(posY)[-maxcount:]
+    croppedlist = list(croppedlist)[-maxcount:]
+
+    for croppedtext in croppedlist:
+        croppedtext,x = findCoverDot(croppedtext)
+        dotX.append(x)
+
 
     return croppedlist , dotX
 
@@ -186,9 +189,10 @@ def extractDigit(numblock,dotPos):
             digit = numblock[y:y + h, x:x + w]
             digitimg.append(digit)
             digitimgCoor.append(x)
-    
-    digitimg.reverse()
-    digitimgCoor.reverse()
+
+    digitimg = [digitimg for _, digitimg in sorted(zip(digitimgCoor,digitimg), key=lambda pair: pair[0])]
+    digitimgCoor.sort()
+
     dotPos = findDotDecimalPos(digitimgCoor,dotPos)
     return digitimg , dotPos
 
