@@ -201,41 +201,34 @@ def extractDigit(numblock,dotPos):
 def recognizeDigit(digit):
     temptype = param["temps"]
     h,w = digit.shape
-    error = []
+    errorAdd = []
+    errorSub = []
     total = 0
-    differenceImgsa = []
-    differenceImgsb = []
-    differencesa = []
-    differencesb = []
     for idx,current in enumerate(temptype):
-        temps = cv2.resize(temptype[idx], (w,h) , interpolation = cv2.INTER_AREA)
-        difference = cv2.countNonZero( digit - temps )
-        total = total + difference
-        error.append(difference)
-
-    average = total / 10
-    val, idx = min((val, idx) for (idx, val) in enumerate(error))
-    confidence = round((average - val)/average , 3)*100
-
-    if confidence < 30:
-        print("\nLOW confidence, input digit manually")
-        cv2.imshow("x", digit)
-        k = cv2.waitKey(0)
-        idx = chr(k)
-        print ("Inputted digit: " + idx)
-        confidence = 100
+        temps = cv2.resize(current, (w,h) , interpolation = cv2.INTER_AREA)
+        differenceSubimg = digit - temps
+        differenceAddimg = temps + digit
+        differenceAdd = cv2.countNonZero( differenceAddimg ) 
+        differenceSub = cv2.countNonZero( differenceSubimg )
+        errorAdd.append(differenceAdd)
+        errorSub.append(differenceSub)
+        
+    valFromAdd = errorAdd.index(min(errorAdd))
+    valFromSub = errorSub.index(min(errorSub))
+    if valFromAdd == valFromSub:
+        return str(valFromAdd)
     else:
-        idx = str(idx)
+        cv2.imshow("Confused Value",digit)
+        k = cv2.waitKey(0)
+        return str(chr(k))
 
-    return idx , confidence
 
 def digits2string(digits,dchar):
     digitLst = []
     confidenceLst = []
     for digit in digits:
-        number ,confidence = recognizeDigit(digit)
+        number = recognizeDigit(digit)
         digitLst =  digitLst + [number]
-        confidenceLst = confidenceLst + [confidence]
 
     charlst = ''.join(digitLst[:dchar])
     manlst = ''.join(digitLst[dchar:])
