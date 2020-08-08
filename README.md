@@ -8,7 +8,7 @@ The goal is to achieve action as table below
 
 Input | Output
 --- | ---
-<img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/testing%20images/metertest2.png" width = "300"> | <img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/documentation%20pics/Excel%20output.png" width = "300">
+<img src = "https://github.com/Jawkx/schneider_pm5100_reader/blob/master/testing_images/metertest1.png" width = "300"> | <img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/documentation%20pics/Excel%20output.png" width = "300">
 
 
 ## Library used, Language used, Practical implementation 
@@ -96,4 +96,4 @@ The function above will return a greyscale image with flatten perspective as sho
 
 Input | Output
 --- | ---
-<img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/testing%20images/metertest2.png" width = "200"> | <img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/documentation%20pics/deviceimg.png" width = "200">
+<img src = "https://github.com/Jawkx/schneider_pm5100_reader/blob/master/testing_images/metertest1.png" width = "200"> | <img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/documentation%20pics/deviceimg.png" width = "200">
