@@ -95,7 +95,6 @@ The function above will return a greyscale image with flatten perspective as sho
 
 Input | Output
 --- | ---
-<<<<<<< HEAD
 <img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/testing%20images/metertest2.png" width = "200"> | <img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/documentation%20pics/deviceimg.png" width = "200">
 
 ### 2.Find screen
@@ -141,6 +140,5 @@ This is one of the most complex part of the whole project. Due to the variance o
 ```
 
 Then to extract the text image.
-=======
-<img src = "https://github.com/Jawkx/schneider_pm5100_reader/blob/master/testing_images/metertest1.png" width = "200"> | <img src = "https://github.com/Jawkx/opencv_meter_reader/blob/master/documentation%20pics/deviceimg.png" width = "200">
->>>>>>> bfe9506d5119b5b91a5dd268ccf08c4fde78b1fd
+
+
